@@ -6,10 +6,14 @@ public struct DatabasesConfig: Service {
     /// Array of connection configuration.
     private var connectionConfig: [String: Any]
 
+    /// Array of poolSize configuration.
+    private var poolSizeConfig: [String: Int]
+
     /// Create a new database config helper.
     public init() {
         self.lazyDatabases = [:]
         self.connectionConfig = [:]
+        self.poolSizeConfig = [:]
     }
 
     // MARK: Database
@@ -22,9 +26,13 @@ public struct DatabasesConfig: Service {
     /// - parameters:
     ///     - database: Initialized instance of a `Database` to add.
     ///     - id: `DatabaseIdentifier` to use for this `Database`.
-    public mutating func add<D>(database: D, as id: DatabaseIdentifier<D>) {
+    public mutating func add<D>(database: D, as id: DatabaseIdentifier<D>, poolSize: Int? = nil) {
         assert(lazyDatabases[id.uid] == nil, "A database with id '\(id.uid)' is already registered.")
         lazyDatabases[id.uid] = { _ in database }
+        if let poolSize = poolSize {
+            assert(poolSize >= 1)
+            poolSizeConfig[id.uid] = poolSize
+        }
     }
 
 
@@ -36,9 +44,13 @@ public struct DatabasesConfig: Service {
     /// - parameters:
     ///     - database: Type of a `Database` to add.
     ///     - id: `DatabaseIdentifier` to use for this `Database`.
-    public mutating func add<D>(database: D.Type, as id: DatabaseIdentifier<D>) {
+    public mutating func add<D>(database: D.Type, as id: DatabaseIdentifier<D>, poolSize: Int? = nil) {
         assert(lazyDatabases[id.uid] == nil, "A database with id '\(id.uid)' is already registered.")
         lazyDatabases[id.uid] = { try $0.make(D.self) }
+        if let poolSize = poolSize {
+            assert(poolSize >= 1)
+            poolSizeConfig[id.uid] = poolSize
+        }
     }
 
     /// Add a lazy database to the config. This closure will be run when the application boots.
@@ -50,9 +62,13 @@ public struct DatabasesConfig: Service {
     /// - parameters:
     ///     - id: `DatabaseIdentifier` to use for this `Database`.
     ///     - database: Closure accepting a `Container` and returning a `Database`.
-    public mutating func add<D>(as id: DatabaseIdentifier<D>, database: @escaping (Container) throws -> D) {
+    public mutating func add<D>(as id: DatabaseIdentifier<D>, poolSize: Int? = nil, database: @escaping (Container) throws -> D) {
         assert(lazyDatabases[id.uid] == nil, "A database with id '\(id.uid)' is already registered.")
         lazyDatabases[id.uid] = database
+        if let poolSize = poolSize {
+            assert(poolSize >= 1)
+            poolSizeConfig[id.uid] = poolSize
+        }
     }
 
     // MARK: Logging
@@ -102,6 +118,6 @@ public struct DatabasesConfig: Service {
         for (id, lazyDatabase) in lazyDatabases {
             databases[id] = try lazyDatabase(container)
         }
-        return Databases(storage: databases, connectionConfig: connectionConfig)
+        return Databases(storage: databases, connectionConfig: connectionConfig, poolSizeConfig: poolSizeConfig)
     }
 }

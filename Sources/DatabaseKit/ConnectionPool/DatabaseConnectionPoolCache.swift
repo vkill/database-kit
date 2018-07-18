@@ -31,7 +31,12 @@ internal final class DatabaseConnectionPoolCache: ServiceType {
         if let existing = cache[dbid.uid] as? DatabaseConnectionPool<ConfiguredDatabase<D>> {
             return existing
         } else {
-            let new = try databases.requireDatabase(for: dbid).newConnectionPool(config: config, on: eventLoop)
+            var _config = config
+            if let poolSize = databases.poolSize(for: dbid) {
+                _config.maxConnections = poolSize
+            }
+
+            let new = try databases.requireDatabase(for: dbid).newConnectionPool(config: _config, on: eventLoop)
             cache[dbid.uid] = new
             return new
         }

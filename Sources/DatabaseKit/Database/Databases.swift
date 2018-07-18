@@ -11,10 +11,14 @@ public struct Databases: ServiceType {
     /// Private storage: `[DatabaseIdentifier: ConnectionConfig]`
     private let connectionConfig: [String: Any]
 
+    /// Private storage: `[DatabaseIdentifier: Int]`
+    private let poolSizeConfig: [String: Int]
+
     /// Private init: creates a new `Databases` struct.
-    internal init(storage: [String: Any], connectionConfig: [String: Any]) {
+    internal init(storage: [String: Any], connectionConfig: [String: Any], poolSizeConfig: [String: Int]) {
         self.storage = storage
         self.connectionConfig = connectionConfig
+        self.poolSizeConfig = poolSizeConfig
     }
 
     /// Fetches the `Database` for a given `DatabaseIdentifier`.
@@ -46,4 +50,19 @@ public struct Databases: ServiceType {
         let config = connectionConfig[dbid.uid] as? ConnectionConfig<D> ?? .init()
         return ConfiguredDatabase(config: config, base: db)
     }
+
+    /// Fetches the `poolSize` for a given `DatabaseIdentifier`.
+    ///
+    ///     let poolSize = databases.poolSize(for: .psql)
+    ///
+    /// - parameters:
+    ///     - id: `DatabaseIdentifier` of the `Database` to fetch.
+    /// - returns: poolSize by the supplied ID, if one could be found.
+    public func poolSize<D>(for dbid: DatabaseIdentifier<D>) -> Int? {
+        guard let size = poolSizeConfig[dbid.uid] else {
+            return nil
+        }
+        return size
+    }
+
 }
