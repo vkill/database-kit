@@ -12,13 +12,13 @@ public struct Databases: ServiceType {
     private let connectionConfig: [String: Any]
 
     /// Private storage: `[DatabaseIdentifier: Int]`
-    private let poolSizeConfig: [String: Int]
+    private let connectionPoolMaxConnectionsConfig: [String: Int]
 
     /// Private init: creates a new `Databases` struct.
-    internal init(storage: [String: Any], connectionConfig: [String: Any], poolSizeConfig: [String: Int]) {
+    internal init(storage: [String: Any], connectionConfig: [String: Any], connectionPoolMaxConnectionsConfig: [String: Int]) {
         self.storage = storage
         self.connectionConfig = connectionConfig
-        self.poolSizeConfig = poolSizeConfig
+        self.connectionPoolMaxConnectionsConfig = connectionPoolMaxConnectionsConfig
     }
 
     /// Fetches the `Database` for a given `DatabaseIdentifier`.
@@ -51,18 +51,18 @@ public struct Databases: ServiceType {
         return ConfiguredDatabase(config: config, base: db)
     }
 
-    /// Fetches the `poolSize` for a given `DatabaseIdentifier`.
+    /// Fetches the `connectionPoolMaxConnections` for a given `DatabaseIdentifier`.
     ///
-    ///     let poolSize = databases.poolSize(for: .psql)
+    ///     let connectionPoolMaxConnections = databases.connectionPoolMaxConnections(for: .psql)
     ///
     /// - parameters:
     ///     - id: `DatabaseIdentifier` of the `Database` to fetch.
-    /// - returns: poolSize by the supplied ID, if one could be found.
-    public func poolSize<D>(for dbid: DatabaseIdentifier<D>) -> Int? {
-        guard let size = poolSizeConfig[dbid.uid] else {
+    /// - returns: connectionPool maxConnections by the supplied ID, if one could be found.
+    public func connectionPoolMaxConnections<D>(for dbid: DatabaseIdentifier<D>) -> Int? {
+        guard let maxConnections = connectionPoolMaxConnectionsConfig[dbid.uid] else {
             return nil
         }
-        return size
+        return maxConnections
     }
 
 }

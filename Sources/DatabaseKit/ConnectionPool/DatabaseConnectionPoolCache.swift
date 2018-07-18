@@ -32,8 +32,8 @@ internal final class DatabaseConnectionPoolCache: ServiceType {
             return existing
         } else {
             var _config = config
-            if let poolSize = databases.poolSize(for: dbid) {
-                _config.maxConnections = poolSize
+            if let connectionPoolMaxConnections = databases.connectionPoolMaxConnections(for: dbid) {
+                _config.maxConnections = connectionPoolMaxConnections
             }
 
             let new = try databases.requireDatabase(for: dbid).newConnectionPool(config: _config, on: eventLoop)
