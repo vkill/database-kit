@@ -26,13 +26,9 @@ public struct DatabasesConfig: Service {
     /// - parameters:
     ///     - database: Initialized instance of a `Database` to add.
     ///     - id: `DatabaseIdentifier` to use for this `Database`.
-    public mutating func add<D>(database: D, as id: DatabaseIdentifier<D>, connectionPoolMaxConnections: Int? = nil) {
+    public mutating func add<D>(database: D, as id: DatabaseIdentifier<D>) {
         assert(lazyDatabases[id.uid] == nil, "A database with id '\(id.uid)' is already registered.")
         lazyDatabases[id.uid] = { _ in database }
-        if let connectionPoolMaxConnections = connectionPoolMaxConnections {
-            assert(connectionPoolMaxConnections >= 1)
-            connectionPoolMaxConnectionsConfig[id.uid] = connectionPoolMaxConnections
-        }
     }
 
 
@@ -44,13 +40,9 @@ public struct DatabasesConfig: Service {
     /// - parameters:
     ///     - database: Type of a `Database` to add.
     ///     - id: `DatabaseIdentifier` to use for this `Database`.
-    public mutating func add<D>(database: D.Type, as id: DatabaseIdentifier<D>, connectionPoolMaxConnections: Int? = nil) {
+    public mutating func add<D>(database: D.Type, as id: DatabaseIdentifier<D>) {
         assert(lazyDatabases[id.uid] == nil, "A database with id '\(id.uid)' is already registered.")
         lazyDatabases[id.uid] = { try $0.make(D.self) }
-        if let connectionPoolMaxConnections = connectionPoolMaxConnections {
-            assert(connectionPoolMaxConnections >= 1)
-            connectionPoolMaxConnectionsConfig[id.uid] = connectionPoolMaxConnections
-        }
     }
 
     /// Add a lazy database to the config. This closure will be run when the application boots.
@@ -62,13 +54,22 @@ public struct DatabasesConfig: Service {
     /// - parameters:
     ///     - id: `DatabaseIdentifier` to use for this `Database`.
     ///     - database: Closure accepting a `Container` and returning a `Database`.
-    public mutating func add<D>(as id: DatabaseIdentifier<D>, connectionPoolMaxConnections: Int? = nil, database: @escaping (Container) throws -> D) {
+    public mutating func add<D>(as id: DatabaseIdentifier<D>, database: @escaping (Container) throws -> D) {
         assert(lazyDatabases[id.uid] == nil, "A database with id '\(id.uid)' is already registered.")
         lazyDatabases[id.uid] = database
-        if let connectionPoolMaxConnections = connectionPoolMaxConnections {
-            assert(connectionPoolMaxConnections >= 1)
-            connectionPoolMaxConnectionsConfig[id.uid] = connectionPoolMaxConnections
-        }
+    }
+
+    // MARK: ConnectionPoolMaxConnections
+    /// Add database connectionPoolMaxConnections to the config
+    ///
+    ///     databases.connectionPoolMaxConnections(1, for: .psql)
+    ///
+    /// - parameters:
+    ///     - maxConnections: maxConnections for `DatabaseIdentifier`.
+    ///     - id: `DatabaseIdentifier` to use for this `Database`.
+    public mutating func connectionPoolMaxConnections<D>(_ maxConnections: Int, for id: DatabaseIdentifier<D>) {
+        assert(maxConnections >= 1)
+        connectionPoolMaxConnectionsConfig[id.uid] = maxConnections
     }
 
     // MARK: Logging
